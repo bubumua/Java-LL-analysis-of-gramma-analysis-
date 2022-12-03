@@ -18,6 +18,7 @@ public class NonTerminalSymbol extends Symbol {
     ArrayList<ArrayList<Symbol>> productions;
     /**
      * FIRST集列表
+     * 每一条产生式（右部）都与一个FIRST集对应
      */
     ArrayList<Set<Symbol>> firsts;
     /**
