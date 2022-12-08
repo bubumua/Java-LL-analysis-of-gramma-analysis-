@@ -24,10 +24,12 @@ public class Main {
      * $表示空符号
      * 大写的英文字母（后面可以至多带一个'）表示非终结符号
      * 其它字符(#除外)表示终结符号
-     * 文法文件每一行必须以<非终结符号>::=<符号串>|<符号串>|...形式表示
+     * 文法规则必须以<非终结符号>::=<符号串>|<符号串>|...形式表示
+     * 每一条文法规则单独占一行
+     * 不能包含直接或间接左递归的文法规则
      * 文法必须是LL(1)文法，且开始符号所在的产生式必须写在第一行！
      */
-    static final String FILENAME = "grammar.txt";
+    static final String FILENAME = "a.txt";
     
     public static void main(String[] args) throws FileNotFoundException {
         // 获取文件路径
@@ -337,15 +339,16 @@ public class Main {
      * @author Bubu
      */
     static Set<Symbol> generateFirstForProduction(ArrayList<Symbol> production) {
+        // 创建返回的FIRST集结果，初始化为空
         Set<Symbol> result = new HashSet<>();
-        // 如果产生式首符号不是非终结符号，那么直接将首符号加入first集合，并返回结果
-        if (production.get(0).type != SymbolType.NONTERMINAL_SYMBOL) {
-            result.add(production.get(0));
-            return result;
-        }
-        // 如果产生式首符号是非终结符号
+        // 对于产生式右部符号串的每一个符号
         for (int i = 0; i < production.size(); i++) {
             // 如果不是最后一个符号，对每个符号求FIRST集，分情况加入到总FIRST集
+            // 如果不是非终结符号，那么直接将首符号加入first集合，并返回结果
+            if (production.get(i).type != SymbolType.NONTERMINAL_SYMBOL) {
+                result.add(production.get(i));
+                return result;
+            }
             if (i < production.size() - 1) {
                 Set<Symbol> candidateFirst = generateFirstForNTS((NonTerminalSymbol) (production.get(i)));
                 // 若含空符号，则将非空符号加入FIRST集，然后再看下一个符号
@@ -390,6 +393,14 @@ public class Main {
      * 处理一条文法规则，该文法规则可以包含若干候选式
      *
      * @param originProductionStr 文法规则字符串
+     * @Return void
+     * @author Bubu
+     */
+    /**
+     * 处理一条文法规则，将文法规则中的符号计入符号表，以及为左部的非终结符号添加若干产生式
+     *
+     * @param originProductionStr 原始的文法规则字符串
+     * @param ifMarkStart         是否标记开始符号
      * @Return void
      * @author Bubu
      */
