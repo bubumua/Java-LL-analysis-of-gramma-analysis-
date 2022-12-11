@@ -87,6 +87,7 @@ public class AnalysisTable {
      * @author Bubu
      */
     public void displayTable() {
+        System.out.println("Analysis Table below:");
         for (TableItem item : items) {
             System.out.println(item.toString());
         }

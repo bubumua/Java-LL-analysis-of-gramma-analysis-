@@ -29,7 +29,7 @@ public class Main {
      * 不能包含直接或间接左递归的文法规则
      * 文法必须是LL(1)文法，且开始符号所在的产生式必须写在第一行！
      */
-    static final String FILENAME = "a.txt";
+    static final String FILENAME = "exp.txt";
     
     public static void main(String[] args) throws FileNotFoundException {
         // 获取文件路径
@@ -60,28 +60,45 @@ public class Main {
                 }
             }
         }
-        allProductions.displayAll();
+        // allProductions.displayAll();
         // 为每个非终结符号的每个产生式生成FIRST集
         generateFirst();
         // 为每个非终结符号生成FOLLOW集
         generateFollow();
         // 输出符号表
-        displaySigma();
+        displaySigma("符号: 符号类型 (以该符号为产生式左部的产生式个数){表达式...} FIRST:{[表达式1的FIRST集]...} FOLLOW:{该符号FOLLOW集}");
         AnalysisTable table = new AnalysisTable();
         // 生成分析表
         generateAnalysisTable(table);
         // 输出分析表
         table.displayTable();
-        // 定义要判断的句子
-        String sentence = "i+i*i";
-        if (LLAnalyze(table, sentence)) {
-            System.out.println(sentence + " belongs to this grammar");
+        // 询问要判断的句子
+        System.out.println("input the sentence to analyze:");
+        Scanner input = new Scanner(System.in);
+        if (input.hasNext()) {
+            String inputSentence = input.next();
+            String transformedSentence = replaceInteger(inputSentence);
+            if (LLAnalyze(table, transformedSentence)) {
+                System.out.println(inputSentence + " belongs to the grammar");
+            } else {
+                System.out.println(inputSentence + " not belongs to the grammar");
+            }
+        }
+    }
+    
+    public static String replaceInteger(String str) {
+        if (str != null && !"".equals(str)) {
+            Pattern pattern = Pattern.compile("\\d+");
+            Matcher matcher = pattern.matcher(str);
+            String result = matcher.replaceAll("i");
+            return result;
         } else {
-            System.out.println(sentence + " not belongs to this grammar");
+            return str;
         }
     }
     
     /**
+     * 总控程序
      * 对输入的字符串（句子）根据分析表进行LL分析
      *
      * @param table    LL分析表
@@ -108,6 +125,8 @@ public class Main {
         }
         // 当分析栈不为空且输入栈顶不为界限符时循环
         while (!(analysisStack.isEmpty() && inputStack.peek().equals(new BoundarySymbol()))) {
+            // 输出分析栈和输入栈
+            System.out.println("#" + stackToString(analysisStack, true) + "\t\t" + stackToString(inputStack, false));
             // 获取分析栈和输入栈顶符号
             Symbol fromAnalysisStack = analysisStack.peek();
             Symbol fromInputStack = inputStack.peek();
@@ -117,7 +136,7 @@ public class Main {
                 TableItem item = table.getItem((NonTerminalSymbol) fromAnalysisStack, fromInputStack);
                 // 如果无法寻找到表项，则说明出错
                 if (item == null) {
-                    System.out.println("not found item:[" + fromAnalysisStack.toString() + "," + fromInputStack + "]");
+                    System.out.println("ERROR: not found table-item:[" + fromAnalysisStack.name + "," + fromInputStack.name + "]");
                     return false;
                 }
                 // 若能寻找到表项，则分析栈出栈，再将表项中的产生式右部非空符号逆序入分析栈
@@ -144,8 +163,39 @@ public class Main {
                 }
             }
         }
+        // 再输出一遍，打印分析过程（符合文法情况下）的最后一步
+        System.out.println("#" + stackToString(analysisStack, true) + "\t\t" + stackToString(inputStack, false));
         return true;
     }
+    
+    private static String stackToString(Stack<Symbol> stack, boolean reverse) {
+        StringBuilder sb = new StringBuilder();
+        Stack<Symbol> temp = new Stack<Symbol>();
+        Symbol s = null;
+        if (reverse) {
+            while (!stack.isEmpty()) {
+                s = stack.pop();
+                temp.push(s);
+            }
+            while (!temp.isEmpty()) {
+                s = temp.pop();
+                sb.append(s.name);
+                stack.push(s);
+            }
+        } else {
+            while (!stack.isEmpty()) {
+                s = stack.pop();
+                sb.append(s.name);
+                temp.push(s);
+            }
+            while (!temp.isEmpty()) {
+                s = temp.pop();
+                stack.push(s);
+            }
+        }
+        return sb.toString();
+    }
+    
     
     /**
      * 生成LL分析表
@@ -203,7 +253,6 @@ public class Main {
             count++;
         }
     }
-    
     
     /**
      * 为非终结符号生成FOLLOW集
@@ -389,13 +438,6 @@ public class Main {
         return true;
     }
     
-    /**
-     * 处理一条文法规则，该文法规则可以包含若干候选式
-     *
-     * @param originProductionStr 文法规则字符串
-     * @Return void
-     * @author Bubu
-     */
     /**
      * 处理一条文法规则，将文法规则中的符号计入符号表，以及为左部的非终结符号添加若干产生式
      *
